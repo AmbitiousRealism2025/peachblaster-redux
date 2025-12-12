@@ -6,17 +6,19 @@ import BulletManager from "./BulletManager";
 import type ParticleSystem from "../rendering/ParticleSystem";
 import SFXManager from "../audio/SFXManager";
 import {
+  BULLET_AUTO_FIRE_INTERVAL_SECONDS,
   BULLET_FIRE_COOLDOWN_SECONDS,
   BULLET_SPEED,
   PARTICLE_SPEED_MIN,
   PARTICLE_THRUSTER_EMIT_RATE,
-  SHIP_DAMPING,
+  SHIP_COAST_DAMPING,
   SHIP_INVULNERABILITY_BLINK_INTERVAL,
   SHIP_INVULNERABILITY_DURATION,
   SHIP_MAX_SPEED,
   SHIP_ROTATION_SPEED,
   SHIP_SIZE,
   SHIP_THRUST_ACCELERATION,
+  SHIP_THRUST_DAMPING,
   WORLD_WRAP_PADDING
 } from "../config/tuning";
 
@@ -32,6 +34,7 @@ export default class Ship {
 
   private wasThrustingLastFrame = false;
   private fireCooldown = 0;
+  private autoFireTimer = 0;
   private bulletManager: BulletManager | null = null;
   private particleSystem: ParticleSystem | null = null;
   private thrusterEmitTimer = 0;
@@ -134,7 +137,9 @@ export default class Ship {
       );
     }
 
-    PhysicsSystem.applyDamping(this.velocity, SHIP_DAMPING);
+    // Apply appropriate damping based on thrust state
+    const dampingFactor = thrusting ? SHIP_THRUST_DAMPING : SHIP_COAST_DAMPING;
+    PhysicsSystem.applyDamping(this.velocity, dampingFactor);
     PhysicsSystem.clampSpeed(this.velocity, SHIP_MAX_SPEED);
 
     const rotationStep =
@@ -206,9 +211,31 @@ export default class Ship {
       return;
     }
 
+    // Decrease cooldown
     this.fireCooldown = Math.max(0, this.fireCooldown - dt);
 
-    if (!inputManager.isFiring() || this.fireCooldown > 0) {
+    // PRIORITY 1: Fire immediately on press event (tap-to-fire)
+    if (inputManager.wasFireJustPressed() && this.fireCooldown <= 0) {
+      this.fireOneBullet();
+      this.autoFireTimer = BULLET_AUTO_FIRE_INTERVAL_SECONDS;
+      return;
+    }
+
+    // PRIORITY 2: Auto-fire while held
+    if (inputManager.isFiring()) {
+      this.autoFireTimer -= dt;
+      if (this.autoFireTimer <= 0 && this.fireCooldown <= 0) {
+        this.fireOneBullet();
+        this.autoFireTimer = BULLET_AUTO_FIRE_INTERVAL_SECONDS;
+      }
+    } else {
+      // Reset auto-fire timer when not holding
+      this.autoFireTimer = 0;
+    }
+  }
+
+  private fireOneBullet(): void {
+    if (!this.bulletManager) {
       return;
     }
 
@@ -265,6 +292,7 @@ export default class Ship {
     this.invulnerabilityTimer = 0;
     this.blinkTimer = 0;
     this.thrusterEmitTimer = 0;
+    this.autoFireTimer = 0;
     this.wasThrustingLastFrame = false;
     this.isThrusting = false;
     this.mesh.visible = true;

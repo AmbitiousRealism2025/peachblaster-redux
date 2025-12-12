@@ -48,8 +48,113 @@ import {
   SCORE_BOSS_HIT,
   SCORE_SATELLITE_DESTROY,
   SHIP_TRAIL_EMIT_INTERVAL,
-  SHIP_TRAIL_LENGTH
+  SHIP_TRAIL_LENGTH,
+  SHIP_SPAWN_CLEARANCE,
+  SHIP_SPAWN_MAX_ATTEMPTS,
 } from "./config/tuning";
+
+/**
+ * Finds a spawn position for the ship that doesn't overlap any active hazards.
+ * Samples random positions within camera bounds (with 15% margin) and checks
+ * clearance against peaches, boss, satellites, and seeds.
+ * Returns a safe position, or (0,0) as fallback if no safe spot found after max attempts.
+ */
+function findSafeSpawnPosition(
+  camera: THREE.OrthographicCamera,
+  peachManager: PeachManager,
+  bossManager: MegaPeachManager | null
+): THREE.Vector2 {
+  const activePeaches = peachManager.getActivePeaches();
+  const shipRadius = 0.3; // SHIP_SIZE * 0.5
+
+  // Calculate camera bounds with 15% margin to avoid edge spawns
+  const marginX = (camera.right - camera.left) * 0.15;
+  const marginY = (camera.top - camera.bottom) * 0.15;
+  const minX = camera.left + marginX;
+  const maxX = camera.right - marginX;
+  const minY = camera.bottom + marginY;
+  const maxY = camera.top - marginY;
+
+  for (let attempt = 0; attempt < SHIP_SPAWN_MAX_ATTEMPTS; attempt++) {
+    // Sample random position within bounded area
+    const x = minX + Math.random() * (maxX - minX);
+    const y = minY + Math.random() * (maxY - minY);
+    const candidate = new THREE.Vector2(x, y);
+
+    let isSafe = true;
+
+    // Check clearance against all active peaches
+    for (const peach of activePeaches) {
+      const distance = candidate.distanceTo(peach.position);
+      const requiredClearance = shipRadius + peach.getCollisionRadius() + SHIP_SPAWN_CLEARANCE;
+      if (distance < requiredClearance) {
+        isSafe = false;
+        break;
+      }
+    }
+
+    // Check clearance against boss and its projectiles if active
+    if (isSafe && bossManager?.isActive()) {
+      const boss = bossManager.getBoss();
+      if (boss) {
+        const bossDistance = candidate.distanceTo(boss.position);
+        // Boss is large (radius ~2.0); use generous clearance
+        if (bossDistance < SHIP_SPAWN_CLEARANCE * 2.5) {
+          isSafe = false;
+        }
+      }
+
+      // Check clearance against boss seeds
+      if (isSafe) {
+        for (const seed of bossManager.getSeeds()) {
+          const seedDistance = candidate.distanceTo(seed.position);
+          if (seedDistance < SHIP_SPAWN_CLEARANCE) {
+            isSafe = false;
+            break;
+          }
+        }
+      }
+
+      // Check clearance against satellites (optional but safer)
+      if (isSafe) {
+        for (const satellite of bossManager.getSatellites()) {
+          const satelliteDistance = candidate.distanceTo(satellite.position);
+          if (satelliteDistance < SHIP_SPAWN_CLEARANCE) {
+            isSafe = false;
+            break;
+          }
+        }
+      }
+    }
+
+    if (isSafe) {
+      return candidate;
+    }
+  }
+
+  // Fallback: return center (ship has invulnerability on spawn)
+  if (import.meta.env.DEV) {
+    console.warn("Could not find safe spawn position after max attempts; using center fallback");
+  }
+  return new THREE.Vector2(0, 0);
+}
+
+/**
+ * Respawns ship at a safe position after taking damage.
+ * Combines safe position finding with ship state reset and invulnerability activation.
+ */
+function respawnShipSafely(
+  ship: Ship,
+  camera: THREE.OrthographicCamera,
+  peachManager: PeachManager,
+  bossManager: MegaPeachManager | null
+): void {
+  const safePosition = findSafeSpawnPosition(camera, peachManager, bossManager);
+  ship.position.copy(safePosition);
+  ship.velocity.set(0, 0);
+  ship.rotation = Math.PI / 2;
+  ship.activateInvulnerability();
+}
 
 async function initializeApp(): Promise<void> {
   try {
@@ -245,7 +350,8 @@ async function initializeApp(): Promise<void> {
         megaPeachManager?.despawn();
         hud.hideBossUI();
 
-        ship.position.set(0, 0);
+        const safeSpawn = findSafeSpawnPosition(camera, peachManager, megaPeachManager);
+        ship.position.copy(safeSpawn);
         ship.velocity.set(0, 0);
         ship.rotation = Math.PI / 2;
         ship.mesh.visible = true;
@@ -342,22 +448,20 @@ async function initializeApp(): Promise<void> {
               megaPeachManager!.getSeeds()
             );
 
-	          if (shipSeedCollisions.length > 0) {
-	            for (const seed of shipSeedCollisions) {
-	              megaPeachManager!.getSeedManager().despawn(seed);
-	            }
-	            SFXManager.getInstance().playShipDamage();
-	            livesManager.loseLife();
-	            ship.resetState();
-	            ship.activateInvulnerability();
-	          }
+          if (shipSeedCollisions.length > 0) {
+            for (const seed of shipSeedCollisions) {
+              megaPeachManager!.getSeedManager().despawn(seed);
+            }
+            SFXManager.getInstance().playShipDamage();
+            livesManager.loseLife();
+            respawnShipSafely(ship, camera, peachManager, megaPeachManager);
+          }
 
-	          if (CollisionSystem.checkShipBossCollisions(ship, boss)) {
-	            livesManager.loseLife();
-	            SFXManager.getInstance().playShipDamage();
-	            ship.resetState();
-	            ship.activateInvulnerability();
-	          }
+          if (CollisionSystem.checkShipBossCollisions(ship, boss)) {
+            livesManager.loseLife();
+            SFXManager.getInstance().playShipDamage();
+            respawnShipSafely(ship, camera, peachManager, megaPeachManager);
+          }
 
           if (
             boss.phase === BossPhase.DEFEATED &&
@@ -478,8 +582,7 @@ async function initializeApp(): Promise<void> {
           for (const peach of shipPeachCollisions) {
             peachManager.despawn(peach);
           }
-          ship.resetState();
-          ship.activateInvulnerability();
+          respawnShipSafely(ship, camera, peachManager, megaPeachManager);
         }
 
         if (spawnSystem.isWaveComplete()) {

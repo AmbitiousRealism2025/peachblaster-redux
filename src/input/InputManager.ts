@@ -12,6 +12,9 @@ export class InputManager {
 
   private mobileControls: MobileControls | null = null;
 
+  private fireJustPressed = false;
+  private wasFirePressed = false;
+
   private isTouchWithinMobileControls(event: TouchEvent): boolean {
     const mobileControlsContainer = document.getElementById("mobile-controls");
     if (!mobileControlsContainer) {
@@ -147,6 +150,27 @@ export class InputManager {
     return this.touchFireFramesRemaining > 0;
   }
 
+  /**
+   * Returns true for exactly one frame when fire transitions from released to pressed.
+   * Use this for tap-to-fire semantics.
+   */
+  public wasFireJustPressed(): boolean {
+    return this.fireJustPressed;
+  }
+
+  /**
+   * Returns true while fire input is actively held (not edge-detected).
+   */
+  private isFireCurrentlyHeld(): boolean {
+    if (this.pressedKeys.has("Space")) {
+      return true;
+    }
+    if (this.mobileControls?.isFirePressed()) {
+      return true;
+    }
+    return false;
+  }
+
   public getTouchDirection(): THREE.Vector2 | null {
     const direction =
       this.mobileControls?.getJoystickDirection() ?? this.touchDirection;
@@ -154,6 +178,11 @@ export class InputManager {
   }
 
   public update(): void {
+    // Detect fire button press edge (released → pressed)
+    const fireCurrentlyPressed = this.isFireCurrentlyHeld();
+    this.fireJustPressed = fireCurrentlyPressed && !this.wasFirePressed;
+    this.wasFirePressed = fireCurrentlyPressed;
+
     if (this.touchFireFramesRemaining > 0) {
       this.touchFireFramesRemaining -= 1;
     }

@@ -19,10 +19,24 @@ export const SHIP_THRUST_ACCELERATION = 15;
 export const SHIP_MAX_SPEED = 12;
 
 /**
- * Per-frame damping factor at 60Hz.
- * Lower values increase friction (faster slowdown); higher values keep drift.
+ * @deprecated Use SHIP_THRUST_DAMPING and SHIP_COAST_DAMPING instead.
+ * Retained for backward compatibility.
  */
 export const SHIP_DAMPING = 0.92;
+
+/**
+ * Per-frame damping factor while thrusting (at 60Hz).
+ * Higher value = less drag while accelerating.
+ * Set close to 1.0 to let speed build freely during thrust.
+ */
+export const SHIP_THRUST_DAMPING = 0.995;
+
+/**
+ * Per-frame damping factor while coasting (at 60Hz).
+ * Lower than thrust damping to create gradual space-like deceleration.
+ * 0.985 at 60fps ≈ 60% velocity retained after 1 second.
+ */
+export const SHIP_COAST_DAMPING = 0.985;
 
 /**
  * Rotation speed in degrees per second.
@@ -67,6 +81,17 @@ export const PEACH_MIN_ROTATION_SPEED = 30;
 export const PEACH_MAX_ROTATION_SPEED = 90;
 
 export const PEACH_SPAWN_SAFE_ZONE_RADIUS = 3.0;
+
+/**
+ * Minimum clearance between ship spawn position and any hazard (world units).
+ * Should exceed ship collision radius + largest peach radius + safety margin.
+ */
+export const SHIP_SPAWN_CLEARANCE = 3.0;
+
+/**
+ * Maximum attempts to find a safe spawn position before using fallback.
+ */
+export const SHIP_SPAWN_MAX_ATTEMPTS = 20;
 export const PEACH_POOL_CAPACITY = 50;
 
 // Phase 4: Bullet constants.
@@ -74,6 +99,7 @@ export const BULLET_SPEED = 20;
 export const BULLET_RADIUS = 0.15;
 export const BULLET_TTL_SECONDS = 2.0;
 export const BULLET_FIRE_COOLDOWN_SECONDS = 0.15;
+export const BULLET_AUTO_FIRE_INTERVAL_SECONDS = 0.2;
 export const BULLET_POOL_CAPACITY = 100;
 
 // Phase 4: Collision constants.

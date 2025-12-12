@@ -5,11 +5,19 @@ varying vec3 vNormal;
 varying vec3 vViewPosition;
 varying vec2 vUv;
 
-void main() {
-  vUv = uv;
-  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  vViewPosition = -mvPosition.xyz;
-  vNormal = normalize(normalMatrix * normal);
+	void main() {
+	  vUv = uv;
+
+	  // Apply instance matrix to position BEFORE model-view transform
+	  vec4 instancePosition = instanceMatrix * vec4(position, 1.0);
+	  vec4 mvPosition = modelViewMatrix * instancePosition;
+	  vViewPosition = -mvPosition.xyz;
+
+	  // Transform normal by instance rotation for correct per-instance lighting
+	  mat3 instanceNormalMatrix = mat3(instanceMatrix);
+	  vec3 transformedNormal = instanceNormalMatrix * normal;
+	  vNormal = normalize(normalMatrix * transformedNormal);
+
   gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -64,4 +72,3 @@ export function createPeachMaterial(): THREE.ShaderMaterial {
     fragmentShader
   });
 }
-

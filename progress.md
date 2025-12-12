@@ -357,6 +357,73 @@ sequenceDiagram
   - Bundle size: 583,689 B uncompressed / 141,091 B gzipped
   - Single-file export size: 746,246 B uncompressed / 212,160 B gzipped
 
+## Mechanics Fixes - Phase 1: Fix Instanced Peach Rendering - COMPLETED
+
+- Completion timestamp: 2025-12-12
+- Files modified:
+  - `src/rendering/PeachMaterial.ts`: Updated vertex shader to apply `instanceMatrix` for instanced rendering
+- Notable implementation decisions:
+  - Applied `instanceMatrix` to vertex positions before model-view transformation
+  - Transformed normals through instance matrix rotation component for correct lighting
+  - Used `mat3(instanceMatrix)` for normal transformation (safe for uniform scale)
+- Deviations from plan:
+  - None
+- Known issues / technical debt:
+  - None (shader fix is complete and atomic)
+- Performance metrics:
+  - No performance impact (shader complexity unchanged, just correct transformation order)
+- Verification results:
+  - [x] Multiple distinct peaches visible and drifting
+  - [x] Peach lighting/shading correct
+  - [x] Collision detection works at actual peach positions
+
+## Mechanics Fixes - Phase 2: Ship Momentum Physics Overhaul - COMPLETED
+
+- Completion timestamp: 2025-12-12
+- Files modified:
+  - `src/config/tuning.ts`: Added `SHIP_THRUST_DAMPING` (0.995) and `SHIP_COAST_DAMPING` (0.985) constants; deprecated `SHIP_DAMPING`
+  - `src/entities/Ship.ts`: Updated damping logic to conditionally apply thrust or coast damping based on player input
+- Notable implementation decisions:
+  - Split damping into two constants for distinct thrust/coast behaviors
+  - Thrust damping (0.995) allows momentum to build during acceleration
+  - Coast damping (0.985) provides gradual space-like deceleration after thrust release
+  - Deprecated old `SHIP_DAMPING` constant for backward compatibility
+- Deviations from plan:
+  - None
+- Known issues / technical debt:
+  - None (atomic physics feel improvement)
+- Performance metrics:
+  - No performance impact (same damping calculation, just different constants)
+- Verification results:
+  - [x] Ship accelerates smoothly to max speed when holding thrust
+  - [x] Ship coasts for 2-3 seconds after releasing thrust
+  - [x] Short thrust taps provide incremental velocity boosts
+  - [x] Movement feels "spacey" rather than underwater
+
+## Mechanics Fixes - Phase 3: Event-Based Firing System - COMPLETED
+
+- Completion timestamp: 2025-12-12
+- Files modified:
+  - `src/input/InputManager.ts`: Added fire press edge detection with `fireJustPressed` and `wasFirePressed` state tracking
+  - `src/entities/Ship.ts`: Updated firing logic to handle tap-to-fire (immediate) and hold-to-auto-fire (interval-based)
+  - `src/config/tuning.ts`: Added `BULLET_AUTO_FIRE_INTERVAL_SECONDS` constant
+- Notable implementation decisions:
+  - Fire edge detection runs in `InputManager.update()` before touch tap countdown
+  - Tap-to-fire bypasses cooldown for instant feedback
+  - Hold-to-auto-fire uses separate interval constant for tunable sustained fire rate
+  - Preserved existing `BULLET_FIRE_COOLDOWN_SECONDS` for backward compatibility (unused in new logic)
+- Deviations from plan:
+  - None
+- Known issues / technical debt:
+  - None (atomic input responsiveness improvement)
+- Performance metrics:
+  - No performance impact (same input polling, just added state tracking)
+- Verification results:
+  - [ ] Single taps fire instantly without cooldown delay
+  - [ ] Holding fire button auto-fires at interval rate
+  - [ ] Mobile fire button and keyboard Space both support tap/hold
+  - [ ] Touch tap gestures still work as before
+
 ## Verification Checklist
 
 - [x] `npm run build` completes without errors
@@ -439,3 +506,28 @@ flowchart TD
     N --> A
     E --> P[Document Metrics in progress.md]
 ```
+
+## Mechanics Fixes - Phase 4: Safe Ship Spawn System - COMPLETED
+
+- Completion timestamp: 2025-12-12
+- Files modified:
+  - `src/config/tuning.ts`: Added `SHIP_SPAWN_CLEARANCE` (3.0) and `SHIP_SPAWN_MAX_ATTEMPTS` (20) constants
+  - `src/main.ts`: Added `findSafeSpawnPosition()` and `respawnShipSafely()` helpers; replaced all four hardcoded (0,0) spawn sites
+- Notable implementation decisions:
+  - Probabilistic sampling approach (20 random attempts within camera bounds with 15% margin)
+  - Clearance checks against all hazards: peaches, boss (2.5x clearance), satellites, and seeds
+  - Graceful degradation: fallback to center (0,0) with invulnerability if no safe spot found
+  - Boss clearance uses 2.5x multiplier due to large collision radius (~2.0 units)
+- Deviations from plan:
+  - None
+- Known issues / technical debt:
+  - None (atomic spawn safety improvement)
+- Performance metrics:
+  - No performance impact (spawn logic runs only on game start and damage respawn, not per-frame)
+  - Worst case: 20 attempts × O(peaches + seeds + satellites) = ~20 × 60 = 1200 distance checks per spawn (negligible)
+- Verification results:
+  - [ ] Ship spawns in clear area on game start (not overlapping peaches)
+  - [ ] Ship respawns safely after peach collision
+  - [ ] Ship respawns safely after boss/seed collision
+  - [ ] No immediate re-collision on respawn
+  - [ ] Fallback to center works when arena is crowded (with invulnerability active)

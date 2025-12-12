@@ -177,3 +177,11 @@ Opus also recommends two follow‑up fix stages to schedule after boss work begi
 - Performance targets: 60fps desktop, 45-60fps mid-range mobile (max load: 50 peaches + 100 bullets + 200 particles + boss).
 - Quality presets (low/medium/high) provide performance scaling; reduced-motion forces low quality.
 - README documents all build commands, controls, architecture, and performance expectations.
+
+## Mechanics Fixes Notes (Post-Phase 11)
+
+- **Phase 1 (Instanced Peach Rendering):** Fixed vertex shader in `src/rendering/PeachMaterial.ts` to apply `instanceMatrix` for correct instanced rendering. Peaches now render at their individual positions instead of all at origin.
+- Remaining phases (Ship Momentum, Event-Based Firing, Safe Spawn) are handled by other engineers per the mechanics fixes plan.
+- **Phase 2 (Ship Momentum Physics):** Implemented conditional damping system with separate thrust/coast damping factors. Ship now builds momentum during thrust and coasts smoothly in space. Old `SHIP_DAMPING` constant deprecated but retained for compatibility.
+- **Phase 3 (Event-Based Firing):** Implemented fire press edge detection in `InputManager` with `wasFireJustPressed()` and `isFireCurrentlyHeld()` methods. Ship now fires instantly on tap (bypassing cooldown) and auto-fires at `BULLET_AUTO_FIRE_INTERVAL_SECONDS` when held. Improves input responsiveness without breaking existing touch/keyboard/mobile button inputs.
+- **Phase 4 (Safe Ship Spawn System):** Implemented probabilistic safe spawn system with `findSafeSpawnPosition()` helper that samples random positions within camera bounds and validates clearance against all hazards (peaches, boss, satellites, seeds). Replaced all four hardcoded (0,0) spawn sites in `main.ts` (initial spawn in PLAYING.enter + three damage respawn sites) with `respawnShipSafely()` calls. Added `SHIP_SPAWN_CLEARANCE` (3.0) and `SHIP_SPAWN_MAX_ATTEMPTS` (20) tuning constants. System provides graceful degradation (fallback to center with invulnerability) if no safe spot found after max attempts.
