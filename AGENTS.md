@@ -2,6 +2,61 @@
 
 This file gives future agents fast context on goals, constraints, and conventions for **Peach Blaster**.
 
+## Agent Roles
+
+This project uses a **multi-agent workflow** with distinct responsibilities:
+
+### ChatGPT 5.2 — Planning & Implementation
+- **Planning role:** Creates first-draft plans and specifications
+- **Implementation role:** Primary coding agent during YOLO orchestration
+- **Responsibilities:**
+  - Draft initial implementation plans
+  - Write production code following project conventions
+  - Execute coding tasks during Traycer orchestration
+  - Perform verification steps within YOLO loops
+
+### Claude (Opus 4.5) — Refinement & Review
+- **Planning role:** Refines ChatGPT 5.2's drafts into final specifications
+- **Review role:** Phase review after YOLO loop completion
+- **Responsibilities:**
+  - Read and refine first-draft plans into final drafts
+  - Identify gaps, risks, and architectural concerns in plans
+  - Conduct phase reviews after implementation completes
+  - Validate code quality, performance, and design decisions
+  - Write and maintain documentation
+- **Reference:** See `CLAUDE.md` for detailed Claude agent guidelines
+
+### Traycer — Orchestration
+- **Primary role:** YOLO orchestration and task breakdown
+- **Responsibilities:**
+  - Break final drafts into detailed phases optimized for YOLO execution
+  - Orchestrate ChatGPT 5.2 for coding and verification steps
+  - Manage the implementation loop until phase completion
+
+### Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. DRAFT        ChatGPT 5.2 creates first-draft plan           │
+│                           ↓                                     │
+│  2. REFINE       Claude Opus reviews and refines → final draft  │
+│                           ↓                                     │
+│  3. ORCHESTRATE  Traycer breaks into phases for YOLO execution  │
+│                           ↓                                     │
+│  4. IMPLEMENT    Traycer runs YOLO loop with ChatGPT 5.2        │
+│                  (coding + verification cycles)                 │
+│                           ↓                                     │
+│  5. REVIEW       Claude Opus conducts phase review              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Role Boundaries
+- **ChatGPT 5.2:** Drafting (*what* could work) and coding (*how* to build it)
+- **Claude Opus:** Refining (*what* should work) and reviewing (*did it work well?*)
+- **Traycer:** Orchestrating (*when* and *in what order*)
+
+---
+
 ## Project Summary
 
 Peach Blaster is a web‑based arcade shooter inspired by Asteroids, expanded into a **5‑chapter campaign with a final boss**. The aesthetic is **semi‑realistic juicy fruit wackiness**: gooey, glossy peaches with fuzzy rim light in surreal cosmic biomes. Tone is playful fruit‑mysticism with occasional mild, cartoony body‑horror metamorphosis — strange but not grim.
