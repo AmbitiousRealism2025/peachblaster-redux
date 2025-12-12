@@ -1,0 +1,21 @@
+{
+  "name": "peachblaster-redux",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "export:single": "npm run build && node scripts/export-single.js"
+  },
+  "dependencies": {
+    "three": "^0.165.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.165.0",
+    "terser": "^5.44.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

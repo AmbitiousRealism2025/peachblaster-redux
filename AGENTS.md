@@ -1,0 +1,124 @@
+# AGENTS.md — Peach Blaster Project Guide
+
+This file gives future agents fast context on goals, constraints, and conventions for **Peach Blaster**.
+
+## Project Summary
+
+Peach Blaster is a web‑based arcade shooter inspired by Asteroids, expanded into a **5‑chapter campaign with a final boss**. The aesthetic is **semi‑realistic juicy fruit wackiness**: gooey, glossy peaches with fuzzy rim light in surreal cosmic biomes. Tone is playful fruit‑mysticism with occasional mild, cartoony body‑horror metamorphosis — strange but not grim.
+
+## High‑Level Goals
+
+1. **Feel first:** tight, readable arcade controls with inertia + damping tuned for fun.
+2. **Juice & beauty:** procedural fruit materials, particles, trails, bloom, and satisfying SFX.
+3. **Chaptered campaign:** ~30–40 min full clear, with 5 themed chapters + mini‑bosses + final boss.
+4. **Mobile friendly:** ergonomic thumb controls, stable performance on mid‑range phones.
+5. **Exportable builds:** primary dev uses tooling, but keep a **single‑file arcade export** path.
+
+## Chosen Tech Stack
+
+- **Build:** `Vite + TypeScript`.
+- **Render:** `Three.js` (WebGL2), orthographic 2.5D camera, instancing for scale.
+- **Physics:** custom lightweight inertia + wrap + circle collision for MVP.
+  - Optional upgrade to `rapier2d` only if complexity demands it.
+- **UI:** DOM/CSS overlay.
+- **Audio:** WebAudio procedural SFX first; adaptive synth layers later.
+
+Agents should not introduce heavy frameworks unless there is a clear, agreed benefit.
+
+## Gameplay Pillars
+
+- **Classic loop:** thrust/rotate/wrap/shoot.
+- **Splitting peaches:** Large → 2 Medium → 2 Small.
+- **Variants over time:** each chapter adds one enemy type + one pickup.
+- **Risk/reward:** combo meter + juice meter for specials; resets on damage.
+- **Boss fights:** vulnerability windows, clear telegraphs, escalation per phase.
+
+## Content Roadmap (Locked)
+
+See `MASTER_PLAN.md` for the authoritative plan. Default campaign pacing:
+- 5 chapters, each 4–6 waves + mini‑boss.
+- Final boss: “The First Peach / Jam Singularity” with 3 phases.
+- Full clear target: 30–40 minutes.
+
+## Code/Style Conventions
+
+- TypeScript, strict mode on.
+- Prefer small, pure helper functions over large classes.
+- Use object pooling for bullets/peaches/particles.
+- Keep rendering and simulation decoupled (fixed timestep).
+- Avoid one‑letter names; keep identifiers descriptive.
+- No external image assets for peaches; textures are procedural.
+
+## Quality Bar
+
+When adding features, ensure:
+- **Readability:** enemy silhouettes + attacks are easy to parse.
+- **Performance:** 60fps desktop, 45–60fps mid‑range phones; add quality toggles if needed.
+- **Accessibility:** respect reduced‑motion toggles; avoid critical info by color alone.
+
+## How to Run (expected)
+
+Once scaffold exists:
+- Install deps: `npm install`
+- Dev server: `npm run dev`
+- Build: `npm run build`
+- Arcade export (if present): `npm run export:single`
+
+If scripts differ, update this file.
+
+## Collaboration Notes
+
+- Keep changes aligned with the master plan unless explicitly asked to pivot.
+- If you think a pivot is necessary, propose it in a concise note and wait for approval.
+- Avoid scope creep; land vertical slices end‑to‑end before expanding.
+
+## Opus Review Fixes (Phases 1–5, pre‑Phase 6)
+
+The following items from `PHASE_1-5_REVIEW.md` were addressed before starting Phase 6:
+
+- **Hot‑path allocation cleanup:** Removed per‑frame `new THREE.*` in update loops.
+  - `PeachManager` and `BulletManager` now reuse preallocated `Vector3/Quaternion/Matrix4` scratch objects and a cached hidden matrix for instanced rendering.
+  - `SpawnSystem` uses scratch `Vector2`s for spawn positions, directions, and velocities instead of allocating each spawn.
+  - `CollisionSystem.splitPeach` reduces temp allocations and uses `Vector2.rotateAround` for split velocities.
+  - `PhysicsSystem` was rewritten to **mutate vectors in place** (apply thrust/damping/clamp/wrap without cloning). Call sites in `Ship`, `Peach`, and `Bullet` were updated accordingly; future code should not assume these helpers return new vectors.
+
+- **Score tracking implemented:** Added `ScoreManager` (mirrors `LivesManager` style) plus tuning constants and a HUD `ScoreDisplay`.
+  - Score increments on bullet‑peach kills based on peach size.
+  - Tracks peaches destroyed per chapter and total run.
+  - Reward screen now shows real `peachesDestroyed` for the completed chapter.
+
+- **Async state safety:** Wrapped the `CHAPTER_TRANSITION` async IIFE in `try/catch` with logging and a safe fallback transition on failure.
+
+- **Minor cleanup:** Removed duplicate `ship.mesh.visible = false` in MENU state.
+
+Opus also recommends two follow‑up fix stages to schedule after boss work begins:
+- **Soon (Phases 6–7):** extract remaining magic numbers in `SpawnSystem`, apply chapter background tints, add JSDoc to public APIs.
+- **Later (Phase 8+):** set up a test framework, add critical unit tests, and do a mobile playtest pass to tune controls.
+
+## Phase 6 Notes (Boss Progression)
+
+- Boss progression rules live in `src/core/BossProgression.ts` (not `src/core/ChapterManager.ts`).
+- `BossProgression.startChapter(chapterManager)` snapshots `chapter.hasBoss` and resets per-chapter boss state.
+- `BossProgression.shouldSpawnBoss(chapterManager)` spawns the boss once the chapter has a boss and the last wave completes (`getCurrentWave() >= waveCount`).
+- After defeat, the boss flow in `src/main.ts` transitions to `CHAPTER_TRANSITION` (or `VICTORY` for the final chapter); `CHAPTER_TRANSITION` advances chapters and calls `BossProgression.startChapter()` for the next chapter.
+- If you need to change boss progression behavior, modify `BossProgression` (and its call sites) rather than adding boss-specific APIs to `ChapterManager`.
+
+## Phase 9 Notes (UI + Settings)
+
+- Unified in-game HUD lives in `src/ui/HUD.ts` (wraps lives/score/wave/boss UI + mobile controls).
+- Menu/pause/settings overlay lives in `src/ui/MenuScreen.ts`; game-over and victory overlays are in `src/ui/GameOverScreen.ts` and `src/ui/VictoryScreen.ts`.
+- Settings persistence keys:
+  - `peachblaster_volume` (0.0–1.0)
+  - `peachblaster_muted` ("true"/"false")
+  - `peachblaster_quality` ("low"/"medium"/"high", placeholder for Phase 10)
+- ScoreManager total peaches API is `getPeachesDestroyedTotal()` (used for Game Over/Victory stats).
+- PAUSED state uses `PauseController` to freeze GameLoop + Time; Escape toggles PLAYING ↔ PAUSED (pause is ignored while the boss defeat sequence is running).
+
+## Phase 11 Notes (Build & Export)
+
+- Production build uses Vite with terser minification and manual chunk splitting (Three.js vendor chunk separate).
+- Single-file export script (`scripts/export-single.js`) inlines all JS/CSS/assets into `dist/peachblaster-arcade.html`.
+- Run `npm run export:single` for offline-ready arcade build.
+- Performance targets: 60fps desktop, 45-60fps mid-range mobile (max load: 50 peaches + 100 bullets + 200 particles + boss).
+- Quality presets (low/medium/high) provide performance scaling; reduced-motion forces low quality.
+- README documents all build commands, controls, architecture, and performance expectations.
