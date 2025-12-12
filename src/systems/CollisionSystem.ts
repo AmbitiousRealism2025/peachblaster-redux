@@ -25,6 +25,13 @@ export type BulletSatelliteCollision = {
 
 export default class CollisionSystem {
   private static readonly origin = new THREE.Vector2(0, 0);
+  private static readonly scratchParentVelocity = new THREE.Vector2();
+  private static readonly scratchBaseDirection = new THREE.Vector2();
+  private static readonly scratchPerpendicular = new THREE.Vector2();
+  private static readonly scratchSpawnPositionA = new THREE.Vector2();
+  private static readonly scratchSpawnPositionB = new THREE.Vector2();
+  private static readonly scratchRotatedVelocityA = new THREE.Vector2();
+  private static readonly scratchRotatedVelocityB = new THREE.Vector2();
 
   public static checkCircleCollision(
     positionA: THREE.Vector2,
@@ -187,31 +194,38 @@ export default class CollisionSystem {
       return [];
     }
 
-    const parentVelocity = peach.velocity.clone();
+    const parentVelocity = CollisionSystem.scratchParentVelocity.copy(
+      peach.velocity
+    );
     const speed = parentVelocity.length();
-    const baseDirection =
-      speed > 0
-        ? parentVelocity.clone().normalize()
-        : new THREE.Vector2(1, 0);
+    const baseDirection = CollisionSystem.scratchBaseDirection;
+    if (speed > 0) {
+      baseDirection.copy(parentVelocity).normalize();
+    } else {
+      baseDirection.set(1, 0);
+    }
 
-    const perpendicular = new THREE.Vector2(
-      -baseDirection.y,
-      baseDirection.x
-    ).multiplyScalar(0.3);
+    const perpendicular = CollisionSystem.scratchPerpendicular
+      .set(-baseDirection.y, baseDirection.x)
+      .multiplyScalar(0.3);
 
-    const spawnPositionA = peach.position.clone().add(perpendicular);
-    const spawnPositionB = peach.position.clone().sub(perpendicular);
+    const spawnPositionA = CollisionSystem.scratchSpawnPositionA
+      .copy(peach.position)
+      .add(perpendicular);
+    const spawnPositionB = CollisionSystem.scratchSpawnPositionB
+      .copy(peach.position)
+      .sub(perpendicular);
 
     const angleSpreadRad = THREE.MathUtils.degToRad(
       PEACH_SPLIT_ANGLE_SPREAD_DEGREES
     );
 
-    const rotatedVelocityA = parentVelocity
-      .clone()
+    const rotatedVelocityA = CollisionSystem.scratchRotatedVelocityA
+      .copy(parentVelocity)
       .rotateAround(CollisionSystem.origin, angleSpreadRad)
       .multiplyScalar(PEACH_SPLIT_VELOCITY_MULTIPLIER);
-    const rotatedVelocityB = parentVelocity
-      .clone()
+    const rotatedVelocityB = CollisionSystem.scratchRotatedVelocityB
+      .copy(parentVelocity)
       .rotateAround(CollisionSystem.origin, -angleSpreadRad)
       .multiplyScalar(PEACH_SPLIT_VELOCITY_MULTIPLIER);
 

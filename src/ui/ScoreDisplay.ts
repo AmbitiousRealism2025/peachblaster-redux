@@ -1,10 +1,15 @@
 export default class ScoreDisplay {
-  private container: HTMLDivElement;
+  private container!: HTMLDivElement;
+  private enabled = true;
 
   constructor() {
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. ScoreDisplay disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -13,11 +18,12 @@ export default class ScoreDisplay {
   }
 
   public update(score: number): void {
+    if (!this.enabled) return;
     this.container.textContent = `Score: ${score}`;
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     this.container.remove();
   }
 }
-

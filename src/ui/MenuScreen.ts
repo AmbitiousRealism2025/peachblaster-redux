@@ -16,10 +16,10 @@ const STORAGE_MUTED = "peachblaster_muted";
 const STORAGE_QUALITY = "peachblaster_quality";
 
 export default class MenuScreen {
-  private container: HTMLDivElement;
-  private titleView: HTMLDivElement;
-  private settingsView: HTMLDivElement;
-  private pauseView: HTMLDivElement;
+  private container!: HTMLDivElement;
+  private titleView!: HTMLDivElement;
+  private settingsView!: HTMLDivElement;
+  private pauseView!: HTMLDivElement;
 
   private playButton!: HTMLButtonElement;
   private titleSettingsButton!: HTMLButtonElement;
@@ -34,6 +34,7 @@ export default class MenuScreen {
 
   private backButton!: HTMLButtonElement;
   private settingsReturnView: Exclude<MenuView, "settings"> = "title";
+  private enabled = true;
 
   private readonly callbacks: MenuScreenCallbacks;
 
@@ -92,7 +93,11 @@ export default class MenuScreen {
 
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. MenuScreen disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -122,22 +127,26 @@ export default class MenuScreen {
   }
 
   public showTitle(): void {
+    if (!this.enabled) return;
     this.container.style.display = "flex";
     this.setView("title");
     this.playButton?.focus();
   }
 
   public showPause(): void {
+    if (!this.enabled) return;
     this.container.style.display = "flex";
     this.setView("pause");
     this.resumeButton?.focus();
   }
 
   public hide(): void {
+    if (!this.enabled) return;
     this.container.style.display = "none";
   }
 
   public loadSettings(): void {
+    if (!this.enabled) return;
     const sfx = SFXManager.getInstance();
 
     const storedVolume = this.readStoredNumber(STORAGE_VOLUME);
@@ -157,6 +166,7 @@ export default class MenuScreen {
   }
 
   public saveSettings(): void {
+    if (!this.enabled) return;
     try {
       const volume = this.readSliderPercent() / 100;
       const qualityPreset = this.getSelectedQualityPreset();
@@ -172,6 +182,7 @@ export default class MenuScreen {
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     this.playButton.removeEventListener("click", this.onPlayClick);
     this.titleSettingsButton.removeEventListener(
       "click",
@@ -191,6 +202,7 @@ export default class MenuScreen {
   }
 
   public refreshQualitySelection(): void {
+    if (!this.enabled) return;
     const storedQuality = this.readStoredString(STORAGE_QUALITY);
     this.qualitySelect.value = this.validateQualityPreset(storedQuality);
   }

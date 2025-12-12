@@ -4,7 +4,9 @@ import { WaveConfig } from "../systems/SpawnSystem";
 import {
   WAVE_BASE_PEACH_COUNT,
   WAVE_BASE_SPAWN_INTERVAL,
-  WAVE_COUNT_INCREMENT_PER_WAVE
+  WAVE_COUNT_INCREMENT_PER_WAVE,
+  WAVE_MIN_SPAWN_INTERVAL,
+  WAVE_SPAWN_INTERVAL_REDUCTION_PER_WAVE
 } from "../config/tuning";
 
 export default class ChapterManager {
@@ -71,8 +73,9 @@ export default class ChapterManager {
       (waveNumber - 1) * WAVE_COUNT_INCREMENT_PER_WAVE;
 
     const interval = Math.max(
-      0.6,
-      WAVE_BASE_SPAWN_INTERVAL - (waveNumber - 1) * 0.15
+      WAVE_MIN_SPAWN_INTERVAL,
+      WAVE_BASE_SPAWN_INTERVAL -
+        (waveNumber - 1) * WAVE_SPAWN_INTERVAL_REDUCTION_PER_WAVE
     );
 
     const sizes = this.getSizesForWave(waveNumber);

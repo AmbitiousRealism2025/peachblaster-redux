@@ -2,16 +2,21 @@ import { ChapterConfig } from "../config/chapters";
 import { CHAPTER_CARD_DISPLAY_DURATION_SECONDS } from "../config/tuning";
 
 export default class ChapterCard {
-  private container: HTMLDivElement;
-  private titleElement: HTMLDivElement;
-  private subtitleElement: HTMLDivElement;
-  private hintElement: HTMLDivElement;
+  private container!: HTMLDivElement;
+  private titleElement!: HTMLDivElement;
+  private subtitleElement!: HTMLDivElement;
+  private hintElement!: HTMLDivElement;
   private hideTimer: number | null = null;
+  private enabled = true;
 
   constructor() {
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. ChapterCard disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -34,6 +39,7 @@ export default class ChapterCard {
   }
 
   public show(chapter: ChapterConfig): Promise<void> {
+    if (!this.enabled) return Promise.resolve();
     this.titleElement.textContent = chapter.name;
     this.subtitleElement.textContent = chapter.subtitle;
     this.hintElement.textContent = `${chapter.waveCount} Waves`;
@@ -57,6 +63,7 @@ export default class ChapterCard {
   }
 
   public hide(): void {
+    if (!this.enabled) return;
     if (this.hideTimer !== null) {
       window.clearTimeout(this.hideTimer);
       this.hideTimer = null;
@@ -66,10 +73,10 @@ export default class ChapterCard {
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     if (this.hideTimer !== null) {
       window.clearTimeout(this.hideTimer);
     }
     this.container.remove();
   }
 }
-

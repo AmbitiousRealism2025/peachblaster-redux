@@ -10,12 +10,13 @@ type VictoryScreenCallbacks = {
 };
 
 export default class VictoryScreen {
-  private container: HTMLDivElement;
-  private statsElement: HTMLDivElement;
-  private playAgainButton: HTMLButtonElement;
-  private menuButton: HTMLButtonElement;
+  private container!: HTMLDivElement;
+  private statsElement!: HTMLDivElement;
+  private playAgainButton!: HTMLButtonElement;
+  private menuButton!: HTMLButtonElement;
 
   private readonly callbacks: VictoryScreenCallbacks;
+  private enabled = true;
 
   private readonly onPlayAgainClick = (): void => {
     this.callbacks.onPlayAgain();
@@ -30,7 +31,11 @@ export default class VictoryScreen {
 
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. VictoryScreen disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -67,6 +72,7 @@ export default class VictoryScreen {
   }
 
   public show(stats: VictoryStats): void {
+    if (!this.enabled) return;
     this.statsElement.innerHTML = "";
 
     const score = document.createElement("div");
@@ -87,10 +93,12 @@ export default class VictoryScreen {
   }
 
   public hide(): void {
+    if (!this.enabled) return;
     this.container.style.display = "none";
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     this.playAgainButton.removeEventListener("click", this.onPlayAgainClick);
     this.menuButton.removeEventListener("click", this.onMenuClick);
     this.container.remove();
