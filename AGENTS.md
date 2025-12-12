@@ -177,3 +177,20 @@ Opus also recommends two follow‑up fix stages to schedule after boss work begi
 - Performance targets: 60fps desktop, 45-60fps mid-range mobile (max load: 50 peaches + 100 bullets + 200 particles + boss).
 - Quality presets (low/medium/high) provide performance scaling; reduced-motion forces low quality.
 - README documents all build commands, controls, architecture, and performance expectations.
+
+## Phase R4 Notes (Testing Infrastructure)
+
+- Testing framework: Vitest with jsdom environment for DOM mocking
+- Test location: `tests/` directory (unit tests) and `tests/integration/` (integration tests)
+- Coverage target: >80% for core systems (ObjectPool, StateMachine, CollisionSystem, PhysicsSystem, ChapterManager)
+- Run tests: `npm test` (watch mode), `npm run test:coverage` (coverage report), `npm run test:ui` (UI dashboard)
+- Test conventions:
+  - Mock Three.js dependencies (Vector2, OrthographicCamera) with minimal stubs
+  - Mock DOM elements in `tests/setup.ts` to prevent UI class failures
+  - Use `describe` blocks to group related tests, `it` for individual test cases
+  - Prefer testing public APIs over internal implementation details
+  - Integration tests are skipped placeholders until gameplay loop is stable
+- Future testing priorities:
+  - Expand integration tests for full gameplay scenarios
+  - Add visual regression tests for rendering (optional)
+  - Add performance benchmarks for hot paths (optional)

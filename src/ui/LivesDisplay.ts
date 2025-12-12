@@ -1,10 +1,15 @@
 export default class LivesDisplay {
-  private container: HTMLDivElement;
+  private container!: HTMLDivElement;
+  private enabled = true;
 
   constructor() {
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. LivesDisplay disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -13,6 +18,7 @@ export default class LivesDisplay {
   }
 
   public update(lives: number): void {
+    if (!this.enabled) return;
     this.container.innerHTML = "";
 
     for (let index = 0; index < lives; index += 1) {
@@ -24,7 +30,7 @@ export default class LivesDisplay {
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     this.container.remove();
   }
 }
-

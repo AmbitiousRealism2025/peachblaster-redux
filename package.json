@@ -7,15 +7,22 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "export:single": "npm run build && node scripts/export-single.js"
+    "export:single": "npm run build && node scripts/export-single.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "three": "^0.165.0"
   },
   "devDependencies": {
     "@types/three": "^0.165.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/ui": "^2.1.0",
+    "jsdom": "^25.0.0",
     "terser": "^5.44.1",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vitest": "^2.1.0"
   }
 }

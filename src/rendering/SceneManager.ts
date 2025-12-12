@@ -155,6 +155,21 @@ export default class SceneManager {
     return this.renderer;
   }
 
+  /**
+   * Apply a chapter-specific background tint color.
+   * @param color - Hex color string (e.g., "#1d2430")
+   */
+  public setBackgroundTint(color: string): void {
+    this.scene.background = new THREE.Color(color);
+  }
+
+  /**
+   * Reset background to default black.
+   */
+  public resetBackground(): void {
+    this.scene.background = new THREE.Color(0x000000);
+  }
+
   public addScreenShake(intensity: number): void {
     this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
   }

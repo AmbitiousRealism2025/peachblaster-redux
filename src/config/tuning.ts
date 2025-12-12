@@ -92,6 +92,18 @@ export const WAVE_BASE_PEACH_COUNT = 3;
 export const WAVE_COUNT_INCREMENT_PER_WAVE = 1;
 export const WAVE_BASE_SPAWN_INTERVAL = 2.0;
 
+/**
+ * Minimum spawn interval between peaches in a wave, in seconds.
+ * Prevents spawn rate from becoming too fast in later waves.
+ */
+export const WAVE_MIN_SPAWN_INTERVAL = 0.6;
+
+/**
+ * Spawn interval reduction per wave, in seconds.
+ * Each wave spawns peaches slightly faster than the previous.
+ */
+export const WAVE_SPAWN_INTERVAL_REDUCTION_PER_WAVE = 0.15;
+
 // Phase 5: Scoring.
 export const SCORE_PEACH_LARGE = 20;
 export const SCORE_PEACH_MEDIUM = 50;

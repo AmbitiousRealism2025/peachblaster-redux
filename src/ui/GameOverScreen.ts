@@ -10,12 +10,13 @@ type GameOverScreenCallbacks = {
 };
 
 export default class GameOverScreen {
-  private container: HTMLDivElement;
-  private statsElement: HTMLDivElement;
-  private retryButton: HTMLButtonElement;
-  private menuButton: HTMLButtonElement;
+  private container!: HTMLDivElement;
+  private statsElement!: HTMLDivElement;
+  private retryButton!: HTMLButtonElement;
+  private menuButton!: HTMLButtonElement;
 
   private readonly callbacks: GameOverScreenCallbacks;
+  private enabled = true;
 
   private readonly onRetryClick = (): void => {
     this.callbacks.onRetry();
@@ -30,7 +31,11 @@ export default class GameOverScreen {
 
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. GameOverScreen disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -62,6 +67,7 @@ export default class GameOverScreen {
   }
 
   public show(stats: GameOverStats): void {
+    if (!this.enabled) return;
     this.statsElement.innerHTML = "";
 
     const score = document.createElement("div");
@@ -82,10 +88,12 @@ export default class GameOverScreen {
   }
 
   public hide(): void {
+    if (!this.enabled) return;
     this.container.style.display = "none";
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     this.retryButton.removeEventListener("click", this.onRetryClick);
     this.menuButton.removeEventListener("click", this.onMenuClick);
     this.container.remove();

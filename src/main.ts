@@ -73,9 +73,9 @@ async function initializeApp(): Promise<void> {
       BULLET_TRAIL_EMIT_INTERVAL
     );
 
-    const ship = new Ship(sceneManager);
     const peachManager = new PeachManager(sceneManager);
     const bulletManager = new BulletManager(sceneManager);
+    const ship = new Ship(sceneManager, bulletManager);
     const spawnSystem = new SpawnSystem(peachManager, camera);
     const livesManager = new LivesManager();
     const scoreManager = new ScoreManager();
@@ -173,7 +173,6 @@ async function initializeApp(): Promise<void> {
     const gameLoop = new GameLoop();
     const pauseController = createPauseController(gameLoop, time);
 
-    ship.setBulletManager(bulletManager);
     ship.setParticleSystem(particleSystem);
 
     livesManager.subscribe("livesChanged", lives => {
@@ -215,6 +214,7 @@ async function initializeApp(): Promise<void> {
         megaPeachManager?.despawn();
         hud.hideGameplayHUD();
         menuScreen.showTitle();
+        sceneManager.resetBackground();
         ship.resetState();
         ship.mesh.visible = false;
       },
@@ -239,6 +239,9 @@ async function initializeApp(): Promise<void> {
           chapterManager.startChapter(0);
           bossProgression.startChapter(chapterManager);
           scoreManager.resetRun();
+          sceneManager.setBackgroundTint(
+            chapterManager.getCurrentChapter().backgroundTint
+          );
         }
 
         bossDefeatSequenceRunning = false;
@@ -532,6 +535,7 @@ async function initializeApp(): Promise<void> {
         megaPeachManager?.despawn();
         shipTrail.clear();
         hud.hideGameplayHUD();
+        sceneManager.resetBackground();
 
         gameOverScreen.show({
           score: scoreManager.getScore(),
@@ -580,6 +584,7 @@ async function initializeApp(): Promise<void> {
 
               if (nextChapter) {
                 await chapterCard.show(nextChapter);
+                sceneManager.setBackgroundTint(nextChapter.backgroundTint);
               }
 
               if (chapterJustCompleted) {
@@ -640,6 +645,7 @@ async function initializeApp(): Promise<void> {
         megaPeachManager?.despawn();
         shipTrail.clear();
         hud.hideGameplayHUD();
+        sceneManager.resetBackground();
 
         victoryScreen.show({
           score: scoreManager.getScore(),

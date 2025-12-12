@@ -32,7 +32,7 @@ export default class Ship {
 
   private wasThrustingLastFrame = false;
   private fireCooldown = 0;
-  private bulletManager: BulletManager | null = null;
+  private readonly bulletManager: BulletManager;
   private particleSystem: ParticleSystem | null = null;
   private thrusterEmitTimer = 0;
   private readonly thrusterOffset = new THREE.Vector2();
@@ -40,14 +40,18 @@ export default class Ship {
   private readonly thrusterDirection = new THREE.Vector2();
   private readonly thrusterVelocity = new THREE.Vector2();
   private readonly thrusterColor = new THREE.Color(0xff6600);
+  private readonly firingForwardDirection = new THREE.Vector2();
+  private readonly firingSpawnPosition = new THREE.Vector2();
+  private readonly firingBulletVelocity = new THREE.Vector2();
 
   public mesh: THREE.Mesh;
   public thrusterMesh: THREE.Mesh;
 
   private scene: THREE.Scene;
 
-  constructor(sceneManager: SceneManager) {
+  constructor(sceneManager: SceneManager, bulletManager: BulletManager) {
     this.scene = sceneManager.getScene();
+    this.bulletManager = bulletManager;
 
     const size = SHIP_SIZE;
     const vertices = new Float32Array([
@@ -193,38 +197,30 @@ export default class Ship {
     this.updateFiring(dt, inputManager);
   }
 
-  public setBulletManager(manager: BulletManager): void {
-    this.bulletManager = manager;
-  }
-
   public setParticleSystem(particleSystem: ParticleSystem): void {
     this.particleSystem = particleSystem;
   }
 
   private updateFiring(dt: number, inputManager: InputManager): void {
-    if (!this.bulletManager) {
-      return;
-    }
-
     this.fireCooldown = Math.max(0, this.fireCooldown - dt);
 
     if (!inputManager.isFiring() || this.fireCooldown > 0) {
       return;
     }
 
-    const forwardDirection = new THREE.Vector2(
+    this.firingForwardDirection.set(
       Math.cos(this.rotation),
       Math.sin(this.rotation)
     );
     const spawnOffset = SHIP_SIZE * 0.8;
-    const spawnPosition = this.position
-      .clone()
-      .addScaledVector(forwardDirection, spawnOffset);
-    const bulletVelocity = this.velocity
-      .clone()
-      .addScaledVector(forwardDirection, BULLET_SPEED);
+    this.firingSpawnPosition
+      .copy(this.position)
+      .addScaledVector(this.firingForwardDirection, spawnOffset);
+    this.firingBulletVelocity
+      .copy(this.velocity)
+      .addScaledVector(this.firingForwardDirection, BULLET_SPEED);
 
-    this.bulletManager.spawn(spawnPosition, bulletVelocity);
+    this.bulletManager.spawn(this.firingSpawnPosition, this.firingBulletVelocity);
     SFXManager.getInstance().playBulletFire();
     this.fireCooldown = BULLET_FIRE_COOLDOWN_SECONDS;
   }

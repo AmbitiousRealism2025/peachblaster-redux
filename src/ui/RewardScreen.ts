@@ -11,16 +11,21 @@ type ChapterRewardResult = {
 };
 
 export default class RewardScreen {
-  private container: HTMLDivElement;
-  private statsElement: HTMLDivElement;
-  private continueButton: HTMLButtonElement;
+  private container!: HTMLDivElement;
+  private statsElement!: HTMLDivElement;
+  private continueButton!: HTMLButtonElement;
   private resolveContinue: (() => void) | null = null;
   private livesManager: LivesManager | null = null;
+  private enabled = true;
 
   constructor() {
     const overlay = document.getElementById("ui-overlay");
     if (!overlay) {
-      throw new Error("UI overlay container (#ui-overlay) not found.");
+      console.error(
+        "UI overlay container (#ui-overlay) not found. RewardScreen disabled.",
+      );
+      this.enabled = false;
+      return;
     }
 
     this.container = document.createElement("div");
@@ -50,10 +55,12 @@ export default class RewardScreen {
   }
 
   public setLivesManager(livesManager: LivesManager): void {
+    if (!this.enabled) return;
     this.livesManager = livesManager;
   }
 
   public applyChapterReward(): ChapterRewardResult {
+    if (!this.enabled) return { lifeRestored: false };
     if (!this.livesManager) {
       return { lifeRestored: false };
     }
@@ -72,6 +79,7 @@ export default class RewardScreen {
     stats: RewardStats,
     reward?: ChapterRewardResult
   ): Promise<void> {
+    if (!this.enabled) return Promise.resolve();
     this.statsElement.innerHTML = "";
 
     const waves = document.createElement("div");
@@ -98,10 +106,12 @@ export default class RewardScreen {
   }
 
   public hide(): void {
+    if (!this.enabled) return;
     this.container.style.display = "none";
   }
 
   public dispose(): void {
+    if (!this.enabled) return;
     this.container.remove();
   }
 }
