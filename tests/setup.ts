@@ -1,11 +1,26 @@
 import { beforeEach, vi } from "vitest";
 
 const localStorageStore = new Map<string, string>();
+const stubElementCache = new Map<string, HTMLElement>();
 
-function createStubElement(id: string): HTMLElement {
-  const element = document.createElement("div");
-  element.id = id;
-  return element;
+// Store reference to real getElementById before mocking
+const realGetElementById = document.getElementById.bind(document);
+
+function getOrCreateStubElement(id: string): HTMLElement {
+  // First, check if element exists in real DOM
+  const realElement = realGetElementById(id);
+  if (realElement) {
+    return realElement;
+  }
+
+  // If not in DOM, return cached stub or create new one
+  let stub = stubElementCache.get(id);
+  if (!stub) {
+    stub = document.createElement("div");
+    stub.id = id;
+    stubElementCache.set(id, stub);
+  }
+  return stub;
 }
 
 class MockAudioContext {
@@ -31,7 +46,7 @@ class MockAudioContext {
 
 function installGlobalMocks() {
   vi.spyOn(document, "getElementById").mockImplementation((id: string) => {
-    return createStubElement(id);
+    return getOrCreateStubElement(id);
   });
 
   Object.defineProperty(globalThis, "localStorage", {
@@ -88,6 +103,7 @@ function installGlobalMocks() {
 beforeEach(() => {
   vi.restoreAllMocks();
   localStorageStore.clear();
+  stubElementCache.clear();
   installGlobalMocks();
 });
 
