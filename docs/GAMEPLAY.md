@@ -96,7 +96,7 @@ All patterns respect a safe zone around the player ship.
 
 ```
 Chapter 1: Orchard Belt
-├── Waves 1-6
+├── Waves 1-4
 └── No boss (introduction chapter)
 
 Chapter 2: Syrup Nebula
@@ -108,12 +108,12 @@ Chapter 3: Pitstorm Reef
 └── No boss
 
 Chapter 4: Fuzz Cathedral
-├── Waves 1-5
+├── Waves 1-6
 └── No boss
 
 Chapter 5: Canning Moon
-├── Waves 1-4
-└── Boss: MegaPeach
+├── Waves 1-6
+└── Boss: MegaPeach (final boss)
 ```
 
 ### Wave Mechanics

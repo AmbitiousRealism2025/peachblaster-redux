@@ -176,7 +176,8 @@ Peach Blaster Redux represents a **solid MVP implementation** of an arcade shoot
 ### 5. Security (8.5/10)
 
 #### Excellent Practices
-- Zero external runtime dependencies
+- Minimal external dependencies (only Three.js bundled at runtime)
+- No external network requests or CDN dependencies
 - All localStorage reads validated and sanitized
 - textContent used over innerHTML (except DebugOverlay)
 - No eval(), dynamic code, or prototype manipulation
